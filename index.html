@@ -229,10 +229,18 @@
   <div class="panel">
     <h2>00 · Save File Location</h2>
     <p style="margin:0 0 12px; font-size:13.5px; color:var(--muted); line-height:1.6;">
-      By default, Windows keeps your save under your Documents folder:
+      By default, Windows keeps your saves under this folder:
     </p>
     <div style="font-family:var(--mono); font-size:13px; background:#0c0f0b; border:1px solid var(--border); border-radius:2px; padding:12px 14px; color:#d7ffb8; overflow-x:auto;">
-      %USERPROFILE%\Documents\Agent 64 Spies Never Die\main.save
+      %USERPROFILE%\Documents\Agent 64 Spies Never Die
+    </div>
+    <p style="margin:12px 0 0; font-size:13px; color:var(--muted); line-height:1.6;">
+      Each save slot has its own subfolder, so <code>main.save</code> is actually at:
+    </p>
+    <div style="font-family:var(--mono); font-size:13px; background:#0c0f0b; border:1px solid var(--border); border-radius:2px; padding:12px 14px; margin-top:8px; color:#d7ffb8; overflow-x:auto;">
+      ...\Agent 64 Spies Never Die\Agent 1\main.save<br>
+      ...\Agent 64 Spies Never Die\Agent 2\main.save<br>
+      ...\Agent 64 Spies Never Die\Agent 3\main.save
     </div>
   </div>
 
