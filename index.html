@@ -231,8 +231,9 @@
     <p style="margin:0 0 12px; font-size:13.5px; color:var(--muted); line-height:1.6;">
       By default, Windows keeps your saves under this folder:
     </p>
-    <div style="font-family:var(--mono); font-size:13px; background:#0c0f0b; border:1px solid var(--border); border-radius:2px; padding:12px 14px; color:#d7ffb8; overflow-x:auto;">
-      %USERPROFILE%\Documents\Agent 64 Spies Never Die
+    <div style="display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:13px; background:#0c0f0b; border:1px solid var(--border); border-radius:2px; padding:12px 14px; color:#d7ffb8;">
+      <span id="pathText" style="flex:1; overflow-x:auto; white-space:nowrap;">%USERPROFILE%\Documents\Agent 64 Spies Never Die</span>
+      <button id="btnCopyPath" style="flex-shrink:0; padding:6px 12px; font-size:11px;">Copy</button>
     </div>
     <p style="margin:12px 0 0; font-size:13px; color:var(--muted); line-height:1.6;">
       Each save slot has its own subfolder, so <code>main.save</code> is actually at:
@@ -288,6 +289,8 @@
   const btnDownload = $("btnDownload");
   const btnFormat = $("btnFormat");
   const btnClear = $("btnClear");
+  const btnCopyPath = $("btnCopyPath");
+  const pathText = $("pathText");
 
   let originalFileName = "main.save";
 
@@ -384,6 +387,18 @@
     btnDownload.disabled = true;
     fileInput.value = "";
     log("Editor cleared", "warn");
+  });
+
+  btnCopyPath.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(pathText.textContent);
+      const original = btnCopyPath.textContent;
+      btnCopyPath.textContent = "Copied!";
+      setTimeout(() => { btnCopyPath.textContent = original; }, 1500);
+      log("Save folder path copied to clipboard", "ok");
+    }catch(err){
+      log("Copy failed: " + err.message, "err");
+    }
   });
 
   btnDownload.addEventListener("click", () => {
