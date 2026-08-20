@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENT 64 — SAVE TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<style>
+  :root{
+    --bg: #0b0e0c;
+    --panel: #12171380;
+    --panel-solid: #141a17;
+    --border: #2a332c;
+    --border-hi: #46564a;
+    --text: #dbe0d5;
+    --muted: #7c8878;
+    --stamp: #c0392b;
+    --ok: #8fd14f;
+    --warn: #e0b24c;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 800px 500px at 15% -10%, #1a2118 0%, transparent 60%),
+      radial-gradient(ellipse 900px 600px at 110% 10%, #171d15 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* header / dossier stamp */
+  header{
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:28px 28px 24px;
+    position:relative;
+    background:linear-gradient(180deg, #12160f, #0e120d);
+    overflow:hidden;
+    margin-bottom:28px;
+  }
+  header::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, #ffffff05 28px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.22em;
+    color:var(--muted);
+    text-transform:uppercase;
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:var(--mono);
+    font-weight:800;
+    font-size:clamp(28px,5vw,42px);
+    letter-spacing:-.01em;
+    margin:0 0 6px;
+    color:#f0f4ea;
+  }
+  h1 span{color:var(--stamp);}
+  .subtitle{
+    color:var(--muted);
+    font-size:14.5px;
+    max-width:56ch;
+    line-height:1.55;
+    margin:0;
+  }
+  .stamp{
+    position:absolute;
+    top:22px; right:26px;
+    font-family:var(--mono);
+    font-weight:800;
+    font-size:12px;
+    letter-spacing:.15em;
+    color:var(--stamp);
+    border:2px solid var(--stamp);
+    padding:6px 10px;
+    border-radius:3px;
+    transform:rotate(6deg);
+    opacity:.85;
+    text-transform:uppercase;
+  }
+
+  /* panels */
+  .panel{
+    border:1px solid var(--border);
+    border-radius:2px;
+    background:var(--panel-solid);
+    padding:22px 24px;
+    margin-bottom:20px;
+  }
+  .panel h2{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .panel h2::before{
+    content:"";
+    width:6px;height:6px;
+    background:var(--ok);
+    border-radius:50%;
+    box-shadow:0 0 6px var(--ok);
+  }
+
+  /* dropzone */
+  .drop{
+    border:1.5px dashed var(--border-hi);
+    border-radius:3px;
+    padding:34px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+    font-family:var(--mono);
+  }
+  .drop:hover, .drop.drag{
+    border-color:var(--ok);
+    background:#8fd14f0a;
+  }
+  .drop .big{font-size:15px; color:var(--text); margin-bottom:6px;}
+  .drop .small{font-size:12px; color:var(--muted);}
+  input[type=file]{display:none;}
+
+  /* editor */
+  textarea{
+    width:100%;
+    min-height:420px;
+    background:#0c0f0b;
+    border:1px solid var(--border);
+    border-radius:2px;
+    color:#d7ffb8;
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.6;
+    padding:16px;
+    resize:vertical;
+    outline:none;
+  }
+  textarea:focus{border-color:var(--ok);}
+  textarea::placeholder{color:#4a5344;}
+
+  .row{display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;}
+  button{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:11px 18px;
+    border-radius:2px;
+    border:1px solid var(--border-hi);
+    background:#1a2118;
+    color:var(--text);
+    cursor:pointer;
+    transition:background .15s, border-color .15s, transform .08s;
+  }
+  button:hover{background:#212a1d; border-color:var(--ok);}
+  button:active{transform:scale(.98);}
+  button.primary{
+    background:var(--ok);
+    color:#0b0e0c;
+    border-color:var(--ok);
+  }
+  button.primary:hover{background:#a4e06b;}
+  button.danger{border-color:var(--stamp); color:#e88;}
+  button.danger:hover{background:#c0392b1a;}
+  button:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+
+  /* log */
+  .log{
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.7;
+    background:#0c0f0b;
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:14px 16px;
+    max-height:180px;
+    overflow-y:auto;
+    color:var(--muted);
+  }
+  .log .ok{color:var(--ok);}
+  .log .err{color:var(--stamp);}
+  .log .warn{color:var(--warn);}
+  .log div{white-space:pre-wrap; word-break:break-word;}
+
+  footer{
+    margin-top:30px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--muted);
+    line-height:1.7;
+    text-align:center;
+  }
+  footer a{color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="stamp">Classified</div>
+    <p class="eyebrow">Save File Utility · Client-Side Only</p>
+    <h1>AGENT 64 <span>//</span> SAVE TERMINAL</h1>
+    <p class="subtitle">
+      Decrypt, edit, and re-encrypt <code>main.save</code> entirely in your browser.
+      Nothing here is uploaded anywhere — the AES key lives only in this page's source,
+      and all crypto runs locally.
+    </p>
+  </header>
+
+  <div class="panel">
+    <h2>00 · Save File Location</h2>
+    <p style="margin:0 0 12px; font-size:13.5px; color:var(--muted); line-height:1.6;">
+      By default, Windows keeps your save under your Documents folder:
+    </p>
+    <div style="font-family:var(--mono); font-size:13px; background:#0c0f0b; border:1px solid var(--border); border-radius:2px; padding:12px 14px; color:#d7ffb8; overflow-x:auto;">
+      %USERPROFILE%\Documents\Agent 64 Spies Never Die\main.save
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>01 · Load File</h2>
+    <label class="drop" id="dropzone">
+      <div class="big">Drop <code>main.save</code> here, or click to browse</div>
+      <div class="small">Decoded automatically with AES‑256‑CBC + Base64</div>
+      <input type="file" id="fileInput" accept=".save,.txt,*">
+    </label>
+  </div>
+
+  <div class="panel">
+    <h2>02 · Decrypted Data</h2>
+    <textarea id="editor" placeholder="Load a save file to see its contents here as editable JSON..."></textarea>
+    <div class="row">
+      <button id="btnFormat">Format JSON</button>
+      <button id="btnDownload" class="primary" disabled>Re‑encrypt &amp; Download</button>
+      <button id="btnClear" class="danger">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>03 · Console</h2>
+    <div class="log" id="log"><div class="warn">Standing by. Awaiting file...</div></div>
+  </div>
+
+  <footer>
+    <div>Key &amp; IV are hard-coded in this page's source — AES‑256‑CBC / PKCS7.</div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  // ---- Fixed key material recovered from the game binary (AES-256-CBC) ----
+  const KEY = CryptoJS.enc.Hex.parse("F0A317DC89879CEB1DE871618871FA286C779C80E837BE207A14461865276569");
+  const IV  = CryptoJS.enc.Hex.parse("7E314232633344347535463667374838");
+
+  const $ = (id) => document.getElementById(id);
+  const editor = $("editor");
+  const logEl = $("log");
+  const fileInput = $("fileInput");
+  const dropzone = $("dropzone");
+  const btnDownload = $("btnDownload");
+  const btnFormat = $("btnFormat");
+  const btnClear = $("btnClear");
+
+  let originalFileName = "main.save";
+
+  function log(msg, cls){
+    const line = document.createElement("div");
+    if(cls) line.className = cls;
+    const ts = new Date().toLocaleTimeString();
+    line.textContent = `[${ts}] ${msg}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function stripBOM(str){
+    return str.charCodeAt(0) === 0xFEFF ? str.slice(1) : str;
+  }
+
+  function decryptToJson(base64Text){
+    const clean = base64Text.replace(/\s+/g, "");
+    const cipherParams = CryptoJS.lib.CipherParams.create({
+      ciphertext: CryptoJS.enc.Base64.parse(clean)
+    });
+    const decrypted = CryptoJS.AES.decrypt(cipherParams, KEY, {
+      iv: IV,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    const utf8 = decrypted.toString(CryptoJS.enc.Utf8);
+    if(!utf8) throw new Error("Decrypted result is empty — key or file format may not match");
+    return utf8;
+  }
+
+  function encryptFromJson(jsonStr){
+    const encrypted = CryptoJS.AES.encrypt(jsonStr, KEY, {
+      iv: IV,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    return encrypted.toString(); // already Base64
+  }
+
+  function handleFile(file){
+    originalFileName = file.name || "main.save";
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const raw = stripBOM(e.target.result).trim();
+        log(`Loaded file ${originalFileName} (${raw.length} Base64 chars)`);
+        const plaintext = decryptToJson(raw);
+        try{
+          const parsed = JSON.parse(plaintext);
+          editor.value = JSON.stringify(parsed, null, 4);
+          log("Decrypted successfully, valid JSON ✔", "ok");
+        }catch(jsonErr){
+          editor.value = plaintext;
+          log("Decrypted successfully, but content is not valid JSON — showing raw text, please check manually", "warn");
+        }
+        btnDownload.disabled = false;
+      }catch(err){
+        log("Decryption failed: " + err.message, "err");
+        btnDownload.disabled = true;
+      }
+    };
+    reader.onerror = () => log("Failed to read file", "err");
+    reader.readAsText(file, "utf-8");
+  }
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", (e) => {
+    if(e.target.files[0]) handleFile(e.target.files[0]);
+  });
+  ["dragover","dragenter"].forEach(ev => dropzone.addEventListener(ev, (e) => {
+    e.preventDefault(); dropzone.classList.add("drag");
+  }));
+  ["dragleave","drop"].forEach(ev => dropzone.addEventListener(ev, (e) => {
+    e.preventDefault(); dropzone.classList.remove("drag");
+  }));
+  dropzone.addEventListener("drop", (e) => {
+    const file = e.dataTransfer.files[0];
+    if(file) handleFile(file);
+  });
+
+  btnFormat.addEventListener("click", () => {
+    try{
+      const parsed = JSON.parse(editor.value);
+      editor.value = JSON.stringify(parsed, null, 4);
+      log("JSON formatted", "ok");
+    }catch(err){
+      log("Format failed, content is not valid JSON: " + err.message, "err");
+    }
+  });
+
+  btnClear.addEventListener("click", () => {
+    editor.value = "";
+    btnDownload.disabled = true;
+    fileInput.value = "";
+    log("Editor cleared", "warn");
+  });
+
+  btnDownload.addEventListener("click", () => {
+    try{
+      // Validate JSON before encrypting (catches manual edit mistakes)
+      let jsonStr = editor.value;
+      try{
+        const parsed = JSON.parse(jsonStr);
+        jsonStr = JSON.stringify(parsed); // compact, matches original save format
+      }catch(e){
+        log("Warning: current content is not valid JSON — encrypting as-is, please double-check", "warn");
+      }
+
+      const base64Cipher = encryptFromJson(jsonStr);
+
+      // Rebuild as UTF-8 with BOM to match the original game's file format
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const bodyBytes = new TextEncoder().encode(base64Cipher);
+      const fileBytes = new Uint8Array(bom.length + bodyBytes.length);
+      fileBytes.set(bom, 0);
+      fileBytes.set(bodyBytes, bom.length);
+
+      const blob = new Blob([fileBytes], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = originalFileName || "main.save";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      log(`Re-encrypted and downloaded ${a.download}`, "ok");
+    }catch(err){
+      log("Encryption/download failed: " + err.message, "err");
+    }
+  });
+})();
+</script>
+</body>
+</html>
